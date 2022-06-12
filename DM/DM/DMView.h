@@ -68,6 +68,10 @@ public:
 	afx_msg void OnOpening();
 	afx_msg void OnClosing();
 	afx_msg void OnBinLabeling();
+	afx_msg void OnBinLabelingpushpop();
+	afx_msg void OnBorderFollow();
+	afx_msg void OnGeometryWarping();
+	afx_msg void OnGeometryMorphing();
 };
 
 #ifndef _DEBUG  // DMView.cpp의 디버그 버전

@@ -54,13 +54,21 @@
 #define ID_BINLABELING                  32792
 #define ID_BIN_LABELING                 32793
 #define IDM_BIN_LABELING                32794
+#define ID_32795                        32795
+#define ID_BIN_LABELINGPUSHPOP          32796
+#define IDM_BORDER                      32797
+#define IDM_BORDER_FOLLOW               32798
+#define ID_GeometryZoominPixelCopy      32799
+#define ID_GEOMETRY_WARPING             32800
+#define ID_32801                        32801
+#define ID_GEOMETRY_MORPHING            32802
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        310
-#define _APS_NEXT_COMMAND_VALUE         32795
+#define _APS_NEXT_COMMAND_VALUE         32803
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

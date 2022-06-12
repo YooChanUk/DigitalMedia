@@ -20,6 +20,8 @@
 #define TWO_IMAGES 1
 #define THREE_IMAGES 2
 #define TWO_IMAGES_SCALED 4
+#define MORPHING 8 
+
 
 // CDMView
 
@@ -52,6 +54,10 @@ BEGIN_MESSAGE_MAP(CDMView, CScrollView)
 	ON_COMMAND(ID_OPENING, &CDMView::OnOpening)
 	ON_COMMAND(ID_CLOSING, &CDMView::OnClosing)
 	ON_COMMAND(ID_BIN_LABELING, &CDMView::OnBinLabeling)
+	ON_COMMAND(ID_BIN_LABELINGPUSHPOP, &CDMView::OnBinLabelingpushpop)
+	ON_COMMAND(IDM_BORDER_FOLLOW, &CDMView::OnBorderFollow)
+	ON_COMMAND(ID_GEOMETRY_WARPING, &CDMView::OnGeometryWarping)
+	ON_COMMAND(ID_GEOMETRY_MORPHING, &CDMView::OnGeometryMorphing)
 END_MESSAGE_MAP()
 
 // CDMView 생성/소멸
@@ -104,12 +110,35 @@ void CDMView::OnDraw(CDC* pDC)
 	}
 	else if (viewMode == TWO_IMAGES_SCALED)
 	{
+		/*if (pDoc->Smr() == 1)
+		{
+			drawImage(pDC, pDoc->gResultImg, 430, 30, pDoc->gImageHeight, pDoc->gImageWidth, pDoc->depth);
+		}
+		else
+		{
+			drawImage(pDC, pDoc->gResultImg, 400, 0, pDoc->gImageHeight, pDoc->gImageWidth, pDoc->depth);
+		}*/
 		drawImage(pDC, pDoc->gResultImg, 400, 0, pDoc->gImageHeight, pDoc->gImageWidth, pDoc->depth);
 	}
 	else if(viewMode == TWO_IMAGES)
 	{
 		// TWO_IMAGES인 경우의 결과 이미지
 		drawImage(pDC, pDoc->resultImg, 400, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
+	}
+	else if (viewMode == MORPHING)
+	{
+		// 입력 이미지 2
+		drawImage(pDC, pDoc->inputImg2, 400, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
+		// 결과 이미지 
+		//drawImage(pDC, pDoc->morphedImg, 700, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
+		for (int i = 0; i < 10; i++)
+			for (int y = 0; y < pDoc->imageHeight; y++)       // 모핑 결과 출력 
+				for (int x = 0; x < pDoc->imageWidth; x++)
+					pDC->SetPixel(x + pDoc->imageWidth * 2 + 60, y,
+						RGB(pDoc->morphedImg[i][y][x],
+							pDoc->morphedImg[i][y][x],
+							pDoc->morphedImg[i][y][x]));
+
 	}
 
 	// TODO: 여기에 원시 데이터에 대한 그리기 코드를 추가합니다.
@@ -569,9 +598,85 @@ void CDMView::OnBinLabeling()
 	if (pDoc->inputImg == NULL)
 		return;
 
-	pDoc->grass_label(256,256);
+	pDoc->grass_label(pDoc->imageHeight, pDoc->imageWidth);
 
 	viewMode = TWO_IMAGES;
+
+	Invalidate(FALSE);
+}
+
+
+void CDMView::OnBinLabelingpushpop()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+
+	CDMDoc* pDoc = GetDocument();
+
+	ASSERT_VALID(pDoc);
+
+	if (pDoc->inputImg == NULL)
+		return;
+
+	pDoc->m_BlobColoring(pDoc->imageHeight, pDoc->imageWidth);
+
+	viewMode = TWO_IMAGES;
+
+	Invalidate(FALSE);
+}
+
+
+void CDMView::OnBorderFollow()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+
+	CDMDoc* pDoc = GetDocument();
+
+	ASSERT_VALID(pDoc);
+
+	if (pDoc->inputImg == NULL)
+		return;
+
+	pDoc->m_BorderFollow(pDoc->imageHeight, pDoc->imageWidth);
+
+	viewMode = TWO_IMAGES;
+
+	Invalidate(FALSE);
+}
+
+
+void CDMView::OnGeometryWarping()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+
+	CDMDoc* pDoc = GetDocument();
+
+	ASSERT_VALID(pDoc);
+
+	if (pDoc->inputImg == NULL)
+		return;
+
+	pDoc->GeometryWarping();
+
+	viewMode = TWO_IMAGES;
+
+	Invalidate(FALSE);
+}
+
+
+void CDMView::OnGeometryMorphing()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+
+	CDMDoc* pDoc = GetDocument();
+
+	ASSERT_VALID(pDoc);
+
+	if (pDoc->inputImg == NULL)
+		return;
+
+	pDoc->GeometryMorphing();
+
+	viewMode = MORPHING;
 
 	Invalidate(FALSE);
 }

@@ -29,8 +29,21 @@ public:
 	int tgImageHeight;
 	unsigned char** tgResultImg;
 
-	unsigned char** m_InImg;
-	unsigned char** m_OutImg;
+	//unsigned char** m_InImg;
+	//unsigned char** m_OutImg;
+	unsigned char** morphedImg[10];
+
+	//워핑
+	typedef struct
+	{
+		int Px;
+		int Py;
+		int Qx;
+		int Qy;
+	} control_line;
+
+#include <math.h> 
+
 
 // 작업입니다.
 public:
@@ -85,10 +98,16 @@ public:
 	void GeometryFlip();
 	void Erosion();
 	void Dilation();
-	void Smr();
+	int Smr();
 	void Opening();
 	void CopyResultToInput();
 	void Closing();
 	void grass_label(int height, int width);
 	void grass(short* coloring, int height, int width, int i, int j, int curColor);
+	int push(short* stackx, short* stacky, int arr_size, short vx, short vy, int* top);
+	int pop(short* stackx, short* stacky, short *vx, short *vy, int* top);
+	void m_BlobColoring(int height, int width);
+	void m_BorderFollow(int height, int width);
+	void GeometryWarping();
+	void GeometryMorphing();
 };

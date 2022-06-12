@@ -40,8 +40,8 @@ CDMDoc::~CDMDoc()
 	inputImg2 = NULL;
 	resultImg = NULL;
 	gResultImg = NULL;
-	m_InImg = NULL;
-	m_OutImg = NULL;
+	//m_InImg = NULL;
+	//m_OutImg = NULL;
 
 }
 
@@ -886,14 +886,23 @@ void CDMDoc::Dilation()
 			if (inputImg[y + 1][x] > max) max = inputImg[y + 1][x];
 			if (inputImg[y + 1][x + 1] > max) max = inputImg[y + 1][x + 1];
 
-			resultImg[y][x] = max;   // 최대값을 결과 영상에 저장 
+			if (max > 30) // 2진화 처리 해보기
+			{
+				max = 255;
+				resultImg[y][x] = max;
+			}
+			else if (max <= 20)
+			{
+				max = 0;
+				resultImg[y][x] = max;
+			}
 		}
 	}
 
 }
 
 
-void CDMDoc::Smr()
+int CDMDoc::Smr()
 {
 	// TODO: 여기에 구현 코드 추가.
 	int i, y, x;
@@ -905,10 +914,11 @@ void CDMDoc::Smr()
 	tgImageHeight = (imageHeight % scale_y == 0) ? (imageHeight / scale_y) : (imageHeight / scale_y) + 1;
 
 	// 결과 영상 저장을 위한 기억장소 할당 
-	tgResultImg = (unsigned char**)malloc(gImageHeight * sizeof(unsigned char*));
-	for (i = 0; i < gImageHeight; i++)
+	tgResultImg = (unsigned char**)malloc(tgImageHeight * sizeof(unsigned char*));
+
+	for (i = 0; i < tgImageHeight; i++)
 	{
-		tgResultImg[i] = (unsigned char*)malloc(gImageWidth * depth);
+		tgResultImg[i] = (unsigned char*)malloc(tgImageWidth * depth);
 	}
 
 	for (y = 0; y < tgImageHeight; y++)
@@ -931,15 +941,15 @@ void CDMDoc::Smr()
 	int Oy;
 	int  xdiff, ydiff;
 
-	Oy = imageHeight - 1;
+	Oy = tgImageHeight - 1;
 
-	angle = PI / 180.0 * 30.0;   // 30도를 라디안 값의 각도로 변환 
+	angle = PI / 180.0 * 45.0;   // 30도를 라디안 값의 각도로 변환 
 
-	Cx = imageWidth / 2;   // 회전 중심의 x좌표 
-	Cy = imageHeight / 2;   // 회전 중심의 y좌표 
+	Cx = tgImageWidth / 2;   // 회전 중심의 x좌표 
+	Cy = tgImageHeight / 2;   // 회전 중심의 y좌표 
 
-	gImageWidth = (int)(imageHeight * cos(PI / 2.0 - angle) + imageWidth * cos(angle));
-	gImageHeight = (int)(imageHeight * cos(angle) + imageWidth * cos(PI / 2.0 - angle));
+	gImageWidth = (int)(tgImageHeight * cos(PI / 2.0 - angle) + tgImageWidth * cos(angle));
+	gImageHeight = (int)(tgImageHeight * cos(angle) + tgImageWidth * cos(PI / 2.0 - angle));
 
 	// 결과 영상을 저장할 기억장소 할당 
 	gResultImg = (unsigned char**)malloc(gImageHeight * sizeof(unsigned char*));
@@ -951,8 +961,8 @@ void CDMDoc::Smr()
 
 	// 결과 영상의 x 좌표 범위 : -xdiff ~ gImageWidth - xdiff - 1 
 	// 결과 영상의 y 좌표 범위 : -ydiff ~ gImageHeight - ydiff - 1 
-	xdiff = (gImageWidth - imageWidth) / 2;
-	ydiff = (gImageHeight - imageHeight) / 2;
+	xdiff = (gImageWidth - tgImageWidth) / 2;
+	ydiff = (gImageHeight - tgImageHeight) / 2;
 
 	for (y = -ydiff; y < gImageHeight - ydiff; y++)
 	{
@@ -968,14 +978,17 @@ void CDMDoc::Smr()
 
 			//     5 단계 : 원점이 영상의 좌측 상단에 오도록 y 좌표 변환 
 			y_source = Oy - y_source;
-			if (x_source < 0 || x_source > imageWidth - 1 ||
-				y_source < 0 || y_source > imageHeight - 1)
+			if (x_source < 0 || x_source > tgImageWidth - 1 ||
+				y_source < 0 || y_source > tgImageHeight - 1)
 				gResultImg[y + ydiff][x + xdiff] = 255;
 			else
-				gResultImg[y + ydiff][x + xdiff] = inputImg[y_source][x_source];
+				gResultImg[y + ydiff][x + xdiff] = tgResultImg[y_source][x_source];
 		}
 	}
 
+	int n = 0;
+
+	return n;
 }
 
 
@@ -1040,15 +1053,21 @@ void CDMDoc::Closing()
 void CDMDoc::grass_label(int height, int width)
 {
 	// TODO: 여기에 구현 코드 추가.
-
+	//라벨링된 영상을 저장하기 위하 배열의 메모리 할당
 	short* coloring = new short[height * width];
 
 	int i, j, curColor = 0;
+	for (i = 0; i < height * width; i++)
+	{
+		coloring[i] = 0; // 모든 화소를 미 방문점으로 일단 할당
+	}
 
+	//입력 영상의 라벨링
 	for (i = 0; i < height; i++)
 	{
 		for (j = 0; j < width; j++)
 		{
+			//물체영역(255)이고 미방문점이라면 라벨링 시작
 			if (inputImg[i][j] == 255 && coloring[i * width + j] == 0)
 			{
 				curColor++;
@@ -1086,21 +1105,553 @@ void CDMDoc::grass(short* coloring, int height, int width, int i, int j, int cur
 	// TODO: 여기에 구현 코드 추가.
 	int k, l, index;
 
-	for (k = 0; k < height; k++)
+	for (k = i-1; k <= i+1; k++)
 	{
-		for (l = 0; l < width; l++)
+		for (l = j-1; l <= j+1; l++)
 		{
 			//영상의 경계 벗어날 시 라벨링 하지 않음
 			if (k < 0 || k >= height || l < 0 || l >= width) continue;
 
 			index = k * width + l;
 
+			//미 방문 픽셀이고 값이 물체영역(255)이라면 라벨링 함
 			if (inputImg[k][l] == 255 && coloring[index] == 0)
 			{
 				coloring[index] = curColor;
 				grass(coloring, height, width, k, l, curColor);
 			}
 		}
+	}
+
+}
+
+int CDMDoc::push(short* stackx, short* stacky, int arr_size, short vx, short vy, int* top)
+{
+	// TODO: 여기에 구현 코드 추가.
+	if (*top >= arr_size) return(-1);
+
+	(*top)++;
+	stackx[*top] = vx;
+	stacky[*top] = vy;
+	return(1);
+}
+
+
+int CDMDoc::pop(short* stackx, short* stacky, short *vx, short *vy, int* top)
+{
+	// TODO: 여기에 구현 코드 추가.
+	if (*top ==0) return(-1);
+
+	*vx = stackx[*top];
+	*vy = stacky[*top];
+	(*top)--;
+	return(1);
+}
+
+
+void CDMDoc::m_BlobColoring(int height, int width)
+{
+	// TODO: 여기에 구현 코드 추가.
+	int i, j, m, n, top, area, BlobArea[1000];
+	short curColor = 0, r, c;
+
+	//스택으로 사용할 메모리 할당
+	short* stackx = new short[height * width];
+	short* stacky = new short[height * width];
+	int arr_size = height * width;
+
+	short* coloring = new short[height * width];
+
+	for (i = 0; i < height * width; i++)
+	{
+		coloring[i] = 0; // 메모리 초기화
+	}
+
+	//입력 영상의 라벨링
+	for (i = 0; i < height; i++)
+	{
+		for (j = 0; j < width; j++)
+		{
+			//물체영역(255)이고 미방문점이라면 라벨링 시작
+			if (inputImg[i][j] != 255 || coloring[i * width + j] != 0)
+			{
+				continue;
+			}
+
+			r = i;
+			c = j;
+			top = 0;
+			area = 1;
+
+			curColor++;
+
+			while (1)
+			{
+				GRASSFIRE:
+				for (m = r - 1; m <= r + 1; m++)
+				{
+					for (n = c - 1; n <= c + 1; n++)
+					{
+						if (m < 0 || m >= height || n < 0 || n >= width) continue;
+
+						//미 방문 픽셀이고 값이 물체영역(255)이라면 라벨링 함
+						if ((int)inputImg[m][n] == 255 && coloring[m*width+n] == 0)
+						{
+							coloring[m * width + n] = curColor;
+							if (push(stackx, stacky, arr_size, (short)m, (short)n, &top) == -1)
+							{
+								continue;
+							}
+
+							r = m;
+							c = n;
+							area++;
+							goto GRASSFIRE;
+						}
+					}
+				}
+				if (pop(stackx, stacky, &r, &c, &top) == -1) break;
+			}
+			if (curColor < 1000) BlobArea[curColor] = area;
+		}
+	}
+
+	float grayGap = 250.0f / (float)curColor;
+
+	/*FILE* fout = fopen("blobarea.out", "w");
+	if (fout != NULL)
+	{
+		for (i = 1; i < curColor; i++)
+		{
+			fprintf(fout, "%i : %d\n", i, BlobArea[i]);
+			fclose(fout);
+		}
+	}*/
+
+	for (i = 0; i < height; i++)
+	{
+		for (j = 0; j < width; j++)
+		{
+			int value = (int)(coloring[i * width + j] * grayGap);
+
+			if (value == 0)
+			{
+				resultImg[i][j] = 255;
+			}
+			else
+			{
+				resultImg[i][j] = value;
+			}
+		}
+	}
+
+	delete[]coloring; delete[]stackx; delete[]stacky;
+}
+
+
+void CDMDoc::m_BorderFollow(int height, int width)
+{
+	// 영역의 경계정보를 저장하기 위한 구조체 메모리
+	// TODO: 여기에 구현 코드 추가.
+	typedef struct tagBORDERINFO { short* x, * y; short n, dn; } BORDERINFO;
+	BORDERINFO stBorderInfo[1000];
+
+	//영상에 있는 픽셀이 방문된 점인지를 마크하기 위해 영상 메모리 할당
+	unsigned char* visited = new unsigned char[height * width];
+	memset(visited, 0, height* width * sizeof(char));
+
+	//추적점을 임시로 저장하기 위한 메모리
+	short* xchain = new short[10000];
+	short* ychain = new short[10000];
+
+	// 관심 픽셀의 시계 방향으로 주위점을 나타내기 위한 좌표 설정
+	const POINT nei[8] = // clockwise neighbours
+	{
+		{1,0},{1,-1},{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1}
+	};
+
+	int x0, y0, x, y, k, n;
+	int numberBorder = 0, border_count, diagonal_count;
+	unsigned char c0, c1;
+
+	for (x = 1; x < height; x++)
+	{
+		for (y = 1; y < width; y++)
+		{
+			c0 = inputImg[x][y];
+			c1 = inputImg[x - 1][y];
+			
+			if (c0 != c1 && c0 == 255 && visited[x * width + y] == 0)
+			{
+				border_count = 0;
+				diagonal_count = 0;
+				x0 = x; y0 = y;
+				n = 4;
+				do
+				{
+					//관심점 주위에서 같은 컬러를 가진 경계점을 찾기 위함
+					for(k = 0 ; k< 8; k++ ,n=((n+1) & 7))
+					{
+						short u = (short)(x + nei[n].x);
+						short v = (short)(y + nei[n].y);
+
+						if (u < 0 || u >= height || v < 0 || v >= width) continue;
+						//관심점의 주위를 돌다가 같은 밝기의
+						//경계를 만나면 다음으로 추적할 점이 된다.
+						if (inputImg[u][v] == c0) break;
+					}
+					if (k == 8) break; //isolated point occurs(고립점 발생)
+
+					visited[x * width + y] = 255;
+					xchain[border_count] = x;
+					ychain[border_count++] = y;
+
+					if (border_count >= 10000) break;
+
+					x = x + nei[n].x;
+					y = y + nei[n].y;
+
+					if (n % 2 == 1) diagonal_count++; //대각선 방향의 경계화소를 센다
+
+					n = (n + 5) & 7;
+				}
+				while(!(x == x0 && y == y0));
+
+				if (k == 8) continue; // isolated point occurs(고립점 발생)
+
+				//경계정보를 저장
+				if (border_count < 10) continue; // 너무작은영역의 경계이면 무시
+
+				//경계의 수만큼 메모리를 할당하여 저장함
+				stBorderInfo[numberBorder].x = new short[border_count];
+				stBorderInfo[numberBorder].y = new short[border_count];
+
+				for (k = 0; k < border_count; k++)
+				{
+					stBorderInfo[numberBorder].x[k] = xchain[k];
+					stBorderInfo[numberBorder].y[k] = ychain[k];
+				}
+
+				stBorderInfo[numberBorder].n = border_count;
+				stBorderInfo[numberBorder++].dn = diagonal_count;
+
+				if (numberBorder >= 1000) break;
+			}
+		}
+	}
+	//화면에 경계를 출력하기 위해 resultimg 사용
+
+	memset(resultImg, 255, height* width* sizeof(char));
+	for (k = 0; k < numberBorder; k++)
+	{
+		TRACE("(%d: %d %d, %d)\n", k, stBorderInfo[k].n, stBorderInfo[k].dn,
+			(int)(sqrt(2)* stBorderInfo[k].dn) + (stBorderInfo[k].n - stBorderInfo[k].dn));
+
+		for (int i = 0; i < stBorderInfo[k].n; i++)
+		{
+			x = stBorderInfo[k].x[i];
+			y = stBorderInfo[k].y[i];
+			resultImg[x][y] = 0;
+		}
+	}
+
+	for (k = 0; k < numberBorder; k++) { delete[]stBorderInfo[k].x; delete[]stBorderInfo[k].y;}
+	delete[]visited;
+	delete[]xchain; delete[]ychain;
+}
+
+
+
+void CDMDoc::GeometryWarping()
+{
+	// TODO: 여기에 구현 코드 추가.
+	control_line source_lines[23] =
+	{ {116,7,207,5},{34,109,90,21},{55,249,30,128},{118,320,65,261},
+	 {123,321,171,321},{179,319,240,264},{247,251,282,135},{281,114,228,8},
+	 {78,106,123,109},{187,115,235,114},{72,142,99,128},{74,150,122,154},
+	 {108,127,123,146},{182,152,213,132},{183,159,229,157},{219,131,240,154},
+	 {80,246,117,212},{127,222,146,223},{154,227,174,221},{228,252,183,213},
+	 {114,255,186,257},{109,258,143,277},{152,278,190,262} };
+
+	control_line dest_lines[23] =
+	{ {120,8,200,6},{12,93,96,16},{74,271,16,110},{126,336,96,290},
+	 {142,337,181,335},{192,335,232,280},{244,259,288,108},{285,92,212,13},
+	 {96,135,136,118},{194,119,223,125},{105,145,124,134},{110,146,138,151},
+	 {131,133,139,146},{188,146,198,134},{189,153,218,146},{204,133,221,140},
+	 {91,268,122,202},{149,206,159,209},{170,209,181,204},{235,265,208,199},
+	 {121,280,205,284},{112,286,160,301},{166,301,214,287} };
+
+	double u;       // 수직 교차점의 위치   
+	double h;       // 제어선으로부터 픽셀의 수직 변위 
+	double d;       // 제어선과 픽셀 사이의 거리 
+	double tx, ty;   // 결과영상 픽셀에 대응되는 입력 영상 픽셀 사이의 변위의 합  
+	double xp, yp;  // 각 제어선에 대해 계산된 입력 영상의 대응되는 픽셀 위치   
+	double weight;      // 각 제어선의 가중치       
+	double totalWeight;  // 가중치의 합          
+	double a = 0.001;
+	double b = 2.0;
+	double p = 0.75;
+
+	int x1, x2, y1, y2;
+	int src_x1, src_y1, src_x2, src_y2;
+	double src_line_length, dest_line_length;
+
+	int num_lines = 23;         // 제어선의 수 
+	int line;
+	int x, y;
+	int source_x, source_y;
+	int last_row, last_col;
+
+	last_row = imageHeight - 1;
+	last_col = imageWidth - 1;
+
+	// 출력 영상의 각 픽셀에 대하여 
+	for (y = 0; y < imageHeight; y++)
+	{
+		for (x = 0; x < imageWidth; x++)
+		{
+			totalWeight = 0.0;
+			tx = 0.0;
+			ty = 0.0;
+
+			// 각 제어선에 대하여 
+			for (line = 0; line < num_lines; line++)
+			{
+				x1 = dest_lines[line].Px;
+				y1 = dest_lines[line].Py;
+				x2 = dest_lines[line].Qx;
+				y2 = dest_lines[line].Qy;
+
+				dest_line_length = sqrt((double)(x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+				// 수직교차점의 위치 및 픽셀의 수직 변위 계산 
+				u = (double)((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) /
+					(double)((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+				h = (double)((y - y1) * (x2 - x1) - (x - x1) * (y2 - y1)) / dest_line_length;
+
+				// 제어선과 픽셀 사이의 거리 계산 
+				if (u < 0) d = sqrt((double)(x - x1) * (x - x1) + (y - y1) * (y - y1));
+				else if (u > 1) d = sqrt((double)(x - x2) * (x - x2) + (y - y2) * (y - y2));
+				else d = fabs(h);
+
+				src_x1 = source_lines[line].Px;
+				src_y1 = source_lines[line].Py;
+				src_x2 = source_lines[line].Qx;
+				src_y2 = source_lines[line].Qy;
+				src_line_length = sqrt((double)(src_x2 - src_x1) * (src_x2 - src_x1) +
+					(src_y2 - src_y1) * (src_y2 - src_y1));
+				// 입력 영상에서의 대응 픽셀 위치 계산 
+				xp = src_x1 + u * (src_x2 - src_x1) -
+					h * (src_y2 - src_y1) / src_line_length;
+				yp = src_y1 + u * (src_y2 - src_y1) +
+					h * (src_x2 - src_x1) / src_line_length;
+
+				// 제어선에 대한 가중치 계산 
+				weight = pow((pow((double)(dest_line_length), p) / (a + d)), b);
+
+				// 대응 픽셀과의 변위 계산 
+				tx += (xp - x) * weight;
+				ty += (yp - y) * weight;
+				totalWeight += weight;
+			}
+			source_x = x + (int)(tx / totalWeight + 0.5);
+			source_y = y + (int)(ty / totalWeight + 0.5);
+
+			// 영상의 경계를 벗어나는지 검사 
+			if (source_x < 0) source_x = 0;
+			if (source_x > last_col) source_x = last_col;
+			if (source_y < 0) source_y = 0;
+			if (source_y > last_row) source_y = last_row;
+
+			resultImg[y][x] = inputImg[source_y][source_x];
+		}
+	}
+}
+
+#define NUM_FRAMES 10 
+void CDMDoc::GeometryMorphing()
+{
+	// TODO: 여기에 구현 코드 추가.
+	control_line source_lines[23] =
+	{ {116,7,207,5},{34,109,90,21},{55,249,30,128},{118,320,65,261},
+	 {123,321,171,321},{179,319,240,264},{247,251,282,135},{281,114,228,8},
+	 {78,106,123,109},{187,115,235,114},{72,142,99,128},{74,150,122,154},
+	 {108,127,123,146},{182,152,213,132},{183,159,229,157},{219,131,240,154},
+	 {80,246,117,212},{127,222,146,223},{154,227,174,221},{228,252,183,213},
+	 {114,255,186,257},{109,258,143,277},{152,278,190,262} };
+
+	control_line dest_lines[23] =
+	{ {120,8,200,6},{12,93,96,16},{74,271,16,110},{126,336,96,290},
+	 {142,337,181,335},{192,335,232,280},{244,259,288,108},{285,92,212,13},
+	 {96,135,136,118},{194,119,223,125},{105,145,124,134},{110,146,138,151},
+	 {131,133,139,146},{188,146,198,134},{189,153,218,146},{204,133,221,140},
+	 {91,268,122,202},{149,206,159,209},{170,209,181,204},{235,265,208,199},
+	 {121,280,205,284},{112,286,160,301},{166,301,214,287} };
+
+	double u;       // 수직 교차점의 위치   
+	double h;       // 제어선으로부터 픽셀의 수직 변위 
+	double d;       // 제어선과 픽셀 사이의 거리 
+	double tx, ty;   // 결과영상 픽셀에 대응되는 입력 영상 픽셀 사이의 변위의 합  
+	double xp, yp;  // 각 제어선에 대해 계산된 입력 영상의 대응되는 픽셀 위치     
+	double weight;     // 각 제어선의 가중치       
+	double totalWeight; // 가중치의 합          
+	double a = 0.001, b = 2.0, p = 0.75;
+	unsigned char** warpedImg;
+	unsigned char** warpedImg2;
+	int frame;
+	double fweight;
+	control_line warp_lines[23];
+	double tx2, ty2, xp2, yp2;
+	int dest_x1, dest_y1, dest_x2, dest_y2, source_x2, source_y2;
+	int x1, x2, y1, y2, src_x1, src_y1, src_x2, src_y2;
+	double src_line_length, dest_line_length;
+	int i, j;
+	int num_lines = 23;         // 제어선의 수 
+	int line, x, y, source_x, source_y, last_row, last_col;
+
+	// 두 입력 영상을 읽어들임 
+	LoadTwoImages();
+
+	// 중간 프레임의 워핑 결과를 저장을 위한 기억장소 할당 
+	warpedImg = (unsigned char**)malloc(imageHeight * sizeof(unsigned char*));
+	for (i = 0; i < imageHeight; i++) 
+	{
+		warpedImg[i] = (unsigned char*)malloc(imageWidth * depth);
+	}
+
+	warpedImg2 = (unsigned char**)malloc(imageHeight * sizeof(unsigned char*));
+	for (i = 0; i < imageHeight; i++) 
+	{
+		warpedImg2[i] = (unsigned char*)malloc(imageWidth * depth);
+	}
+
+	for (i = 0; i < NUM_FRAMES; i++) 
+	{
+		morphedImg[i] = (unsigned char**)malloc(imageHeight * sizeof(unsigned char*));
+		for (j = 0; j < imageHeight; j++) 
+		{
+			morphedImg[i][j] = (unsigned char*)malloc(imageWidth * depth);
+		}
+	}
+	last_row = imageHeight - 1;
+	last_col = imageWidth - 1;
+
+	// 각 중간 프레임에 대하여 
+	for (frame = 1; frame <= NUM_FRAMES; frame++)
+	{
+		// 중간 프레임에 대한 가중치 계산 
+		fweight = (double)(frame) / NUM_FRAMES;
+
+		// 중간 프레임에 대한 제어선 계산 
+		for (line = 0; line < num_lines; line++)
+		{
+			warp_lines[line].Px = (int)(source_lines[line].Px +
+				(dest_lines[line].Px - source_lines[line].Px) * fweight);
+			warp_lines[line].Py = (int)(source_lines[line].Py +
+				(dest_lines[line].Py - source_lines[line].Py) * fweight);
+			warp_lines[line].Qx = (int)(source_lines[line].Qx +
+				(dest_lines[line].Qx - source_lines[line].Qx) * fweight);
+			warp_lines[line].Qy = (int)(source_lines[line].Qy +
+				(dest_lines[line].Qy - source_lines[line].Qy) * fweight);
+		}
+		// 출력 영상의 각 픽셀에 대하여 
+		for (y = 0; y < imageHeight; y++)
+		{
+			for (x = 0; x < imageWidth; x++)
+			{
+				totalWeight = 0.0;
+				tx = 0.0;
+				ty = 0.0;
+				tx2 = 0.0;
+				ty2 = 0.0;
+				// 각 제어선에 대하여 
+				for (line = 0; line < num_lines; line++)
+				{
+					x1 = warp_lines[line].Px;
+					y1 = warp_lines[line].Py;
+					x2 = warp_lines[line].Qx;
+					y2 = warp_lines[line].Qy;
+					dest_line_length = sqrt((double)(x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+
+					// 수직교차점의 위치 및 픽셀의 수직 변위 계산 
+					u = (double)((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) /
+						(double)((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+					h = (double)((y - y1) * (x2 - x1) - (x - x1) * (y2 - y1)) / dest_line_length;
+
+					// 제어선과 픽셀 사이의 거리 계산 
+					if (u < 0) d = sqrt((double)(x - x1) * (x - x1) + (y - y1) * (y - y1));
+					else if (u > 1) d = sqrt((double)(x - x2) * (x - x2) + (y - y2) * (y - y2));
+					else d = fabs(h);
+
+					src_x1 = source_lines[line].Px;
+					src_y1 = source_lines[line].Py;
+					src_x2 = source_lines[line].Qx;
+					src_y2 = source_lines[line].Qy;
+					src_line_length = sqrt((double)(src_x2 - src_x1) * (src_x2 - src_x1) +
+						(src_y2 - src_y1) * (src_y2 - src_y1));
+					dest_x1 = dest_lines[line].Px;
+					dest_y1 = dest_lines[line].Py;
+					dest_x2 = dest_lines[line].Qx;
+					dest_y2 = dest_lines[line].Qy;
+					dest_line_length = sqrt((double)(dest_x2 - dest_x1) * (dest_x2 - dest_x1) +
+						(dest_y2 - dest_y1) * (dest_y2 - dest_y1));
+
+					// 입력 영상 1에서의 대응 픽셀 위치 계산 
+					xp = src_x1 + u * (src_x2 - src_x1) -
+						h * (src_y2 - src_y1) / src_line_length;
+					yp = src_y1 + u * (src_y2 - src_y1) +
+						h * (src_x2 - src_x1) / src_line_length;
+
+					// 입력 영상 2에서의 대응 픽셀 위치 계산 
+					xp2 = dest_x1 + u * (dest_x2 - dest_x1) -
+						h * (dest_y2 - dest_y1) / dest_line_length;
+					yp2 = dest_y1 + u * (dest_y2 - dest_y1) +
+						h * (dest_x2 - dest_x1) / dest_line_length;
+					// 제어선에 대한 가중치 계산 
+					weight = pow((pow((double)(dest_line_length), p) / (a + d)), b);
+
+					// 입력 영상 1의 대응 픽셀과의 변위 계산 
+					tx += (xp - x) * weight;
+					ty += (yp - y) * weight;
+
+					// 입력 영상 2의 대응 픽셀과의 변위 계산 
+					tx2 += (xp2 - x) * weight;
+					ty2 += (yp2 - y) * weight;
+
+					totalWeight += weight;
+				}
+				// 입력 영상 1의 대응 픽셀 위치 계산     
+				source_x = x + (int)(tx / totalWeight + 0.5);
+				source_y = y + (int)(ty / totalWeight + 0.5);
+
+				// 입력 영상 2의 대응 픽셀 위치 계산 
+				source_x2 = x + (int)(tx2 / totalWeight + 0.5);
+				source_y2 = y + (int)(ty2 / totalWeight + 0.5);
+
+				// 영상의 경계를 벗어나는지 검사 
+				if (source_x < 0) source_x = 0;
+				if (source_x > last_col) source_x = last_col;
+				if (source_y < 0) source_y = 0;
+				if (source_y > last_row) source_y = last_row;
+
+				if (source_x2 < 0) source_x2 = 0;
+				if (source_x2 > last_col) source_x2 = last_col;
+				if (source_y2 < 0) source_y2 = 0;
+				if (source_y2 > last_row) source_y2 = last_row;
+				// 워핑 결과 저장 
+				warpedImg[y][x] = inputImg[source_y][source_x];
+				warpedImg2[y][x] = inputImg2[source_y2][source_x2];
+			}
+		}
+
+		// 모핑 결과 합병 
+		for (y = 0; y < imageHeight; y++)
+			for (x = 0; x < imageWidth; x++) {
+				int val = (int)((1.0 - fweight) * warpedImg[y][x] +
+					fweight * warpedImg2[y][x]);
+				if (val < 0) val = 0;
+				if (val > 255) val = 255;
+				morphedImg[frame - 1][y][x] = val;
+			}
 	}
 
 }
