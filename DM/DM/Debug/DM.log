@@ -1,4 +1,12 @@
-﻿  DMView.cpp
-C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMView.cpp(284,1): warning C4002: 함수 같은 매크로 호출 'RGB'에 대해 인수가 너무 많습니다.
-C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMView.cpp(299,1): warning C4002: 함수 같은 매크로 호출 'RGB'에 대해 인수가 너무 많습니다.
+﻿  DMDoc.cpp
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(182,6): warning C4101: 'x' :참조되지 않은 지역 변수입니다.
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(544,14): warning C4244: '=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(782,27): warning C4305: '=': 'double'에서 'float'(으)로 잘립니다.
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(846,20): warning C4101: 'j' :참조되지 않은 지역 변수입니다.
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(846,17): warning C4101: 'i' :참조되지 않은 지역 변수입니다.
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(873,20): warning C4101: 'j' :참조되지 않은 지역 변수입니다.
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(873,17): warning C4101: 'i' :참조되지 않은 지역 변수입니다.
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(946,27): warning C4305: '=': 'double'에서 'float'(으)로 잘립니다.
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(1668,11): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\유찬욱\source\repos\DigitalMedia\DM\DM\DMDoc.cpp(1697,18): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   DM.vcxproj -> C:\Users\유찬욱\source\repos\DigitalMedia\DM\Debug\DM.exe

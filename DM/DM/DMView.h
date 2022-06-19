@@ -72,6 +72,7 @@ public:
 	afx_msg void OnBorderFollow();
 	afx_msg void OnGeometryWarping();
 	afx_msg void OnGeometryMorphing();
+	afx_msg void OnBmpGray();
 };
 
 #ifndef _DEBUG  // DMView.cpp의 디버그 버전

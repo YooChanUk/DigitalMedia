@@ -110,4 +110,5 @@ public:
 	void m_BorderFollow(int height, int width);
 	void GeometryWarping();
 	void GeometryMorphing();
+	void BmpGray();
 };

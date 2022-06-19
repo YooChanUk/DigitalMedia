@@ -58,6 +58,7 @@ BEGIN_MESSAGE_MAP(CDMView, CScrollView)
 	ON_COMMAND(IDM_BORDER_FOLLOW, &CDMView::OnBorderFollow)
 	ON_COMMAND(ID_GEOMETRY_WARPING, &CDMView::OnGeometryWarping)
 	ON_COMMAND(ID_GEOMETRY_MORPHING, &CDMView::OnGeometryMorphing)
+	ON_COMMAND(ID_BMP_GRAY, &CDMView::OnBmpGray)
 END_MESSAGE_MAP()
 
 // CDMView 생성/소멸
@@ -132,12 +133,18 @@ void CDMView::OnDraw(CDC* pDC)
 		// 결과 이미지 
 		//drawImage(pDC, pDoc->morphedImg, 700, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
 		for (int i = 0; i < 10; i++)
-			for (int y = 0; y < pDoc->imageHeight; y++)       // 모핑 결과 출력 
-				for (int x = 0; x < pDoc->imageWidth; x++)
-					pDC->SetPixel(x + pDoc->imageWidth * 2 + 60, y,
+		{
+			for (int y = 0; y < pDoc->imageHeight; y++)
+			{
+				for (int x = 0; x < pDoc->imageWidth; x++)// 모핑 결과 출력 
+				{
+					pDC->SetPixel(x + pDoc->imageWidth * 2 + 150, y,
 						RGB(pDoc->morphedImg[i][y][x],
 							pDoc->morphedImg[i][y][x],
 							pDoc->morphedImg[i][y][x]));
+				}
+			}
+		}
 
 	}
 
@@ -677,6 +684,24 @@ void CDMView::OnGeometryMorphing()
 	pDoc->GeometryMorphing();
 
 	viewMode = MORPHING;
+
+	Invalidate(FALSE);
+}
+
+
+void CDMView::OnBmpGray()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CDMDoc* pDoc = GetDocument();
+
+	ASSERT_VALID(pDoc);
+
+	if (pDoc->inputImg == NULL)
+		return;
+
+	pDoc->BmpGray();
+
+	viewMode = TWO_IMAGES;
 
 	Invalidate(FALSE);
 }

@@ -1341,7 +1341,7 @@ void CDMDoc::m_BorderFollow(int height, int width)
 	}
 	//화면에 경계를 출력하기 위해 resultimg 사용
 
-	memset(resultImg, 255, height* width* sizeof(char));
+	memset(visited, 255, height* width* sizeof(char));
 	for (k = 0; k < numberBorder; k++)
 	{
 		TRACE("(%d: %d %d, %d)\n", k, stBorderInfo[k].n, stBorderInfo[k].dn,
@@ -1645,13 +1645,61 @@ void CDMDoc::GeometryMorphing()
 
 		// 모핑 결과 합병 
 		for (y = 0; y < imageHeight; y++)
-			for (x = 0; x < imageWidth; x++) {
+		{
+			for (x = 0; x < imageWidth; x++)
+			{
 				int val = (int)((1.0 - fweight) * warpedImg[y][x] +
 					fweight * warpedImg2[y][x]);
 				if (val < 0) val = 0;
 				if (val > 255) val = 255;
 				morphedImg[frame - 1][y][x] = val;
 			}
+		}
 	}
 
+}
+
+#define WIDTHBYTES(bits)(((bits)+31)/32*4)
+#define BYTE unsigned char
+void CDMDoc::BmpGray()
+{
+	// TODO: 여기에 구현 코드 추가.
+	FILE* infile;
+	infile = fopen("talent.bmp", "rb");
+	if (infile == NULL) { printf("there is no file\n"); exit(1); }
+
+	BITMAPFILEHEADER hf;
+	fread(&hf, sizeof(BITMAPFILEHEADER), 1, infile);
+	if (hf.bfType != 0x4D42) exit(1);
+
+	BITMAPINFOHEADER hInfo;
+	fread(&hInfo, sizeof(BITMAPINFOHEADER), 1, infile);
+	printf("Image Size : (%3dx%3d)\n", hInfo.biWidth, hInfo.biHeight);
+	printf("Pallete Type : %dbit Colors\n", hInfo.biBitCount);
+	if (hInfo.biBitCount != 8) { printf("Bad File format!!"); exit(1); }
+
+	RGBQUAD hRGB[256];
+	fread(hRGB, sizeof(RGBQUAD), 256, infile);
+
+	BYTE* IpImg = new BYTE[hInfo.biSizeImage];
+	fread(IpImg, sizeof(char), hInfo.biSizeImage, infile);
+	fclose(infile);
+
+	int rwsize = WIDTHBYTES(hInfo.biBitCount * hInfo.biWidth);
+
+	for (int i = 0; i < hInfo.biHeight; i++)
+	{
+		for (int j = 0; j < hInfo.biWidth; j++)
+		{
+			IpImg[i * rwsize + j] = 255 - IpImg[i * rwsize + j];
+		}
+	}
+	FILE* outfile = fopen("OutImg.bmp", "wb");
+	fwrite(&hf, sizeof(char), sizeof(BITMAPFILEHEADER), outfile);
+	fwrite(&hInfo, sizeof(char), sizeof(BITMAPINFOHEADER), outfile);
+	fwrite(hRGB, sizeof(RGBQUAD), 256, outfile);
+	fwrite(IpImg, sizeof(char), hInfo.biSizeImage, outfile);
+	fclose(outfile);
+
+	delete[]IpImg;
 }
