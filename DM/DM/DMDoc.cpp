@@ -321,12 +321,15 @@ void CDMDoc::LoadImageFile(CArchive& ar)
 		depth = 1;
 	}
 
+
 	inputImg = (unsigned char**)malloc(imageHeight * sizeof(unsigned char*));
+	inputImg2 = (unsigned char**)malloc(imageHeight * sizeof(unsigned char*));
 	resultImg = (unsigned char**)malloc(imageHeight * sizeof(unsigned char*));
 
 	for (i = 0; i < imageHeight; i++)
 	{
 		inputImg[i] = (unsigned char*)malloc(imageWidth * depth);
+		inputImg2[i] = (unsigned char*)malloc(imageWidth * depth);
 		resultImg[i] = (unsigned char*)malloc(imageWidth * depth);
 	}
 
@@ -720,8 +723,8 @@ void CDMDoc::GeometryZoominInterpolation() // 확대 양선형 보간법
 	int scale_x, scale_y;       // float  scale_x, scale_y; 
 	int E, F;              // x 방향으로 보간된 결과 값 
 	int Ax, Ay, Bx, By, Cx, Cy, Dx, Dy; // 보간에 사용될 4개 픽셀의 좌표 
-	scale_x = 3;
-	scale_y = 3;
+	scale_x = 2;
+	scale_y = 2;
 
 	gImageWidth = imageWidth * scale_x;
 	gImageHeight = imageHeight * scale_y;
@@ -736,7 +739,7 @@ void CDMDoc::GeometryZoominInterpolation() // 확대 양선형 보간법
 
 	for (y = 0; y < gImageHeight; y++)
 	{
-		for (x = 0; x < gImageWidth; x++)
+		for (x = 0; x < gImageWidth * depth; x++)
 		{
 			// 원시 영상에서의 픽셀 좌표 계산 
 			src_x = x / (float)scale_x;        // src_x = x / scale_x; 
@@ -840,7 +843,7 @@ void CDMDoc::GeometryFlip()
 }
 
 
-void CDMDoc::Erosion()
+void CDMDoc::Erosion() //침식
 {
 	// TODO: 여기에 구현 코드 추가.
 	int x, y, min, i, j;
@@ -867,7 +870,7 @@ void CDMDoc::Erosion()
 }
 
 
-void CDMDoc::Dilation()
+void CDMDoc::Dilation() //팽창
 {
 	// TODO: 여기에 구현 코드 추가.
 	int x, y, max, i, j;
@@ -886,19 +889,18 @@ void CDMDoc::Dilation()
 			if (inputImg[y + 1][x] > max) max = inputImg[y + 1][x];
 			if (inputImg[y + 1][x + 1] > max) max = inputImg[y + 1][x + 1];
 
-			if (max > 30) // 2진화 처리 해보기
+			if (max > 100) // 2진화 처리 해보기
 			{
 				max = 255;
 				resultImg[y][x] = max;
 			}
-			else if (max <= 20)
+			else if (max <= 100)
 			{
 				max = 0;
 				resultImg[y][x] = max;
 			}
 		}
 	}
-
 }
 
 
@@ -995,7 +997,6 @@ int CDMDoc::Smr()
 void CDMDoc::Opening()
 {
 	// TODO: 여기에 구현 코드 추가.
-	{
 		Erosion();
 
 		CopyResultToInput();
@@ -1012,7 +1013,6 @@ void CDMDoc::Opening()
 
 		CopyResultToInput();
 		Dilation();
-	}
 
 }
 
@@ -1702,4 +1702,38 @@ void CDMDoc::BmpGray()
 	fclose(outfile);
 
 	delete[]IpImg;
+}
+
+
+void CDMDoc::DOL()
+{
+	int x, y;
+
+	Erosion();
+
+	CopyResultToInput();
+	Erosion();
+
+	CopyResultToInput();
+	Erosion();
+
+	CopyResultToInput();
+	Dilation();
+
+	CopyResultToInput();
+	Dilation();
+
+	CopyResultToInput();
+	Dilation();
+
+
+	for (y = 0; y < imageHeight; y++)
+		for (x = 0; x < imageWidth; x++)
+			inputImg2[y][x] = resultImg[y][x]; //인풋이미지2에 열림연산 저장 result에도 이진 저장된 상태 인풋이미지1도 열림연산되있음(바꿔야함)
+	//열림연산
+	///////////////////////////////
+
+	grass_label(imageHeight,imageWidth); //리절트이미지 라벨링됨
+	//라벨링
+	//////////////////////////////
 }

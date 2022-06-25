@@ -21,6 +21,7 @@
 #define THREE_IMAGES 2
 #define TWO_IMAGES_SCALED 4
 #define MORPHING 8 
+#define LAST 12
 
 
 // CDMView
@@ -59,6 +60,7 @@ BEGIN_MESSAGE_MAP(CDMView, CScrollView)
 	ON_COMMAND(ID_GEOMETRY_WARPING, &CDMView::OnGeometryWarping)
 	ON_COMMAND(ID_GEOMETRY_MORPHING, &CDMView::OnGeometryMorphing)
 	ON_COMMAND(ID_BMP_GRAY, &CDMView::OnBmpGray)
+	ON_COMMAND(ID_LAST, &CDMView::OnLast)
 END_MESSAGE_MAP()
 
 // CDMView 생성/소멸
@@ -104,9 +106,9 @@ void CDMView::OnDraw(CDC* pDC)
 	if (viewMode == THREE_IMAGES)
 	{
 		// 입력 이미지 2
-		drawImage(pDC, pDoc->inputImg2, 400, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
+		drawImage(pDC, pDoc->inputImg2, 550, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
 		// 결과 이미지 
-		drawImage(pDC, pDoc->resultImg, 700, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
+		drawImage(pDC, pDoc->resultImg, 1100, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
 
 	}
 	else if (viewMode == TWO_IMAGES_SCALED)
@@ -124,7 +126,7 @@ void CDMView::OnDraw(CDC* pDC)
 	else if(viewMode == TWO_IMAGES)
 	{
 		// TWO_IMAGES인 경우의 결과 이미지
-		drawImage(pDC, pDoc->resultImg, 400, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
+		drawImage(pDC, pDoc->resultImg, 650, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
 	}
 	else if (viewMode == MORPHING)
 	{
@@ -146,6 +148,10 @@ void CDMView::OnDraw(CDC* pDC)
 			}
 		}
 
+	}
+	else if (viewMode == LAST)
+	{
+		//drawImage(pDC, pDoc->resultImg, 650, 0, pDoc->imageHeight, pDoc->imageWidth, pDoc->depth);
 	}
 
 	// TODO: 여기에 원시 데이터에 대한 그리기 코드를 추가합니다.
@@ -275,7 +281,7 @@ void CDMView::OnPixelTwoImageAdd()
 }
 
 
-void CDMView::drawImage(CDC* pDC, unsigned char** image, int offsetX, int offsetY, int height, int width, int depth) const
+void CDMView::drawImage(CDC* pDC, unsigned char** image, int offsetX, int offsetY, int height, int width, int depth) const //드로우이미지
 {
 	// TODO: 여기에 구현 코드 추가.
 	if (depth == 3)		// 컬러일 때
@@ -448,7 +454,7 @@ void CDMView::OnGeometryZoomoutAvg()
 }
 
 
-void CDMView::OnGeometryZoominInterpolation()
+void CDMView::OnGeometryZoominInterpolation() //양선형 보간법
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	CDMDoc* pDoc = GetDocument();
@@ -702,6 +708,23 @@ void CDMView::OnBmpGray()
 	pDoc->BmpGray();
 
 	viewMode = TWO_IMAGES;
+
+	Invalidate(FALSE);
+}
+
+
+void CDMView::OnLast()
+{
+	CDMDoc* pDoc = GetDocument();
+
+	ASSERT_VALID(pDoc);
+
+	if (pDoc->inputImg == NULL)
+		return;
+
+	pDoc->DOL();
+
+	viewMode = THREE_IMAGES;
 
 	Invalidate(FALSE);
 }

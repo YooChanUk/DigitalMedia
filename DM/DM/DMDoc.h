@@ -111,4 +111,5 @@ public:
 	void GeometryWarping();
 	void GeometryMorphing();
 	void BmpGray();
+	void DOL();
 };
